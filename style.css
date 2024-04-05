@@ -63,7 +63,7 @@ h4 {
 
 /* Create to do section */
 
-.create-todo input[type="text"] {
+.create-todo input[type="text"], .create-todo input[type="datetime-local"]{
   display: block;
   width: 100%;
   font-size: 1.125rem;
@@ -186,7 +186,9 @@ input:checked ~ .bubble::after {
 
 .todo-item .todo-content input {
   color: var(--dark);
-  font-size: 1.125rem;
+  width: 100%;
+  font-size: 1rem;
+  font-weight: 800;
 }
 
 .todo-item .actions {

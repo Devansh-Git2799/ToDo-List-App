@@ -1,4 +1,5 @@
 window.addEventListener("load", () => {
+  notifTimeOuts = {};
   todos = JSON.parse(localStorage.getItem("todos")) || [];
   const formElement = document.querySelector("#new-todo-form");
   formElement.addEventListener("submit", (e) => {
@@ -6,15 +7,21 @@ window.addEventListener("load", () => {
     const indTodoElement = {
       content: e.target.elements.content.value,
       category: e.target.elements.category.value,
+      scheduleTime: e.target.elements.taskTime.value,
       done: false,
       createdAt: new Date().getTime(),
     };
+    if (
+      !indTodoElement.content ||
+      !indTodoElement.category ||
+      !indTodoElement.scheduleTime
+    )
+      return;
     todos.push(indTodoElement);
     sorted_todos = todos.sort(function (a, b) {
       return b.createdAt - a.createdAt;
     });
     localStorage.setItem("todos", JSON.stringify(sorted_todos));
-
     e.target.reset();
     displayTodos();
   });
@@ -49,7 +56,11 @@ function displayTodos() {
     actions.classList.add("actions");
     edit.classList.add("edit");
     deleteBtn.classList.add("delete");
-    content.innerHTML = `<input type="text" value="${todo.content}" readonly/>`;
+    const taskTimeValue = todo.scheduleTime;
+    const [datePart, timePart] = taskTimeValue.split("T");
+    content.innerHTML = `<input type="text" value="${
+      todo.content + " on " + datePart + " at " + timePart
+    }" readonly/>`;
     edit.innerHTML = '<span class="material-symbols-outlined">edit_note</span>';
     deleteBtn.innerHTML =
       '<span class="material-symbols-outlined">delete</span>';
@@ -64,6 +75,9 @@ function displayTodos() {
     todoList.appendChild(todoItem);
     if (todo.done) {
       todoItem.classList.add("done");
+      cancelNotification(todo.createdAt);
+    } else {
+      addReminder(todoItem, todo, datePart, timePart);
     }
     input.addEventListener("click", (e) => {
       todo.done = e.target.checked;
@@ -71,6 +85,7 @@ function displayTodos() {
 
       if (todo.done) {
         todoItem.classList.add("done");
+        cancelNotification(todo.createdAt);
       } else {
         todoItem.classList.remove("done");
       }
@@ -97,4 +112,62 @@ function displayTodos() {
       displayTodos();
     });
   });
+}
+function addReminder(taskItem, todo, datePart, timePart) {
+  const taskScheduledAt = Date.parse(todo.scheduleTime);
+  const taskCreatedAt = todo.createdAt;
+  const timeDifference = taskScheduledAt - taskCreatedAt;
+  const contentPart =
+    "Upcoming Task Alert: " +
+    todo.content +
+    " is Scheduled on " +
+    datePart +
+    " at " +
+    timePart;
+  console.log(timeDifference / 2);
+  if (timeDifference > 0) {
+    // Reminder time has not passed yet, schedule the reminder
+    notifTimeOuts[taskCreatedAt] = setTimeout(() => {
+      // if (Notification.permission === "granted") {
+      //   console.log("Devansh1");
+      //   new Notification("Reminder", {
+      //     body: `"Upcoming Task Alert: " +
+      //     ${todo.content} +
+      //     " is Scheduled on " +
+      //     ${datePart} +
+      //     " at " +
+      //     ${timePart}`,
+      //   });
+      // } else if (Notification.permission !== "denied") {
+      //   Notification.requestPermission().then((permission) => {
+      //     if (permission === "granted") {
+      //       new Notification("Reminder", {
+      //         body: `"Upcoming Task Alert: " +
+      //         ${todo.content} +
+      //         " is Scheduled on " +
+      //         ${datePart} +
+      //         " at " +
+      //         ${timePart}`,
+      //       });
+      //     }
+      //   });
+      // }
+      alert(contentPart);
+    }, timeDifference / 2);
+  }
+  if (todo.done && notifTimeOuts[taskCreatedAt]) {
+    cancelNotification(taskCreatedAt);
+  }
+  const deleteBtn = taskItem.querySelectorAll("button")[1];
+  deleteBtn.addEventListener("click", () => {
+    cancelNotification(taskCreatedAt);
+  });
+}
+
+function cancelNotification(createdAt) {
+  if (notifTimeOuts[createdAt]) {
+    console.log("Devansh2");
+    clearTimeout(notifTimeOuts[createdAt]);
+    delete notifTimeOuts[createdAt];
+  }
 }
