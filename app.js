@@ -10,6 +10,7 @@ window.addEventListener("load", () => {
       scheduleTime: e.target.elements.taskTime.value,
       done: false,
       createdAt: new Date().getTime(),
+      isReminderSet: false,
     };
     if (
       !indTodoElement.content ||
@@ -58,9 +59,12 @@ function displayTodos() {
     deleteBtn.classList.add("delete");
     const taskTimeValue = todo.scheduleTime;
     const [datePart, timePart] = taskTimeValue.split("T");
-    content.innerHTML = `<input type="text" value="${
-      todo.content + " on " + datePart + " at " + timePart
-    }" readonly/>`;
+    let contentWithoutDateTime = todo.content;
+    if (todo.content.includes(" on ")) {
+      contentWithoutDateTime = todo.content.split(" on ")[0];
+    }
+    const contentVal = `${contentWithoutDateTime} on ${datePart} at ${timePart}`;
+    content.innerHTML = `<input type="text" value="${contentVal}" readonly/>`;
     edit.innerHTML = '<span class="material-symbols-outlined">edit_note</span>';
     deleteBtn.innerHTML =
       '<span class="material-symbols-outlined">delete</span>';
@@ -76,7 +80,7 @@ function displayTodos() {
     if (todo.done) {
       todoItem.classList.add("done");
       cancelNotification(todo.createdAt);
-    } else {
+    } else if(!todo.isReminderSet){
       addReminder(todoItem, todo, datePart, timePart);
     }
     input.addEventListener("click", (e) => {
@@ -154,6 +158,9 @@ function addReminder(taskItem, todo, datePart, timePart) {
       // }
       alert(contentPart);
     }, timeDifference / 2);
+    todo.isReminderSet = true;
+    localStorage.setItem("todos",JSON.stringify(todos))
+    displayTodos();
   }
   if (todo.done && notifTimeOuts[taskCreatedAt]) {
     cancelNotification(taskCreatedAt);
